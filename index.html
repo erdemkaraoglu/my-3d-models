@@ -2,21 +2,10 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Babylon Dinamik GLB Oynatıcı</title>
+    <title>Babylon Merkezi Dinamik Oynatıcı</title>
     <style>
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
-            background: transparent !important;
-        }
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            background: transparent !important;
-        }
+        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent !important; }
+        canvas { width: 100%; height: 100%; display: block; background: transparent !important; }
     </style>
 </head>
 <body>
@@ -31,60 +20,50 @@
     const engine = new BABYLON.Engine(canvas, true);
     const scene = new BABYLON.Scene(engine);
     
-    // Arka planı tamamen şeffaf yapıyoruz ki Wix'teki mor rengin görünsün
+    // Arka planı şeffaf yapıyoruz ki Wix'teki mor zemin sırıtmasın
     scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
 
-    // 🎯 TEK KAMERA
+    // 🌐 URL PARAMETRELERİNİ OKUYAN SİHİRLİ FONKSİYON (Wix'ten gelen emirleri yakalar)
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const modelName = urlParams.get('model') || "ek_2026-1"; // Model adı yoksa varsayılan ek_2026-1 açılır
+    const pAlpha    = parseFloat(urlParams.get('alpha')) || -Math.PI / 2;
+    const pBeta     = parseFloat(urlParams.get('beta')) || Math.PI / 3;
+    const pRadius   = parseFloat(urlParams.get('radius')) || 10;
+    const pMouse    = urlParams.get('mouse') === "1"; // "1" ise mouse açılır, "0" ise kilitlenir
+
+    // 🎯 DİNAMİK KAMERA (Wix'ten gönderdiğin milimetrik ayarlarla kurulur)
     const camera = new BABYLON.ArcRotateCamera(
         "camera",
-        -Math.PI / 2,   // yatay
-        0,              // TAM ÜSTTEN BAKIŞ
-        5,              // uzaklık
+        pAlpha,
+        pBeta,
+        pRadius,
         BABYLON.Vector3.Zero(),
         scene
     );
 
-    // 🚫 KONTROLLER KAPALI
-    camera.detachControl();
-    camera.inputs.clear();
-
-    const light = new BABYLON.HemisphericLight(
-        "light",
-        new BABYLON.Vector3(0, 1, 0),
-        scene
-    );
-
-    // 🌐 SİHİRLİ KISIM: URL'den hangi GLB'nin isteneceğini okuyan fonksiyon
-    function getGLBFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        // Eğer linkin sonuna kutu adı yazılmadıysa varsayılan olarak senin ek_2026-1.glb dosyanı açar
-        return urlParams.get('model') || "ek_2026-1"; 
+    // MOUSE / FARE KONTROLÜ AYARI
+    if (pMouse) {
+        camera.attachControl(canvas, true); // Eğer mouse=1 ise kullanıcı döndürebilir
+    } else {
+        camera.detachControl(); // Eğer mouse=0 ise fare tamamen kilitlenir (Intro modu)
+        camera.inputs.clear();
     }
 
-    const modelName = getGLBFromURL();
+    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+    // GitHub'daki GLB dosyasının tam yolu
     const finalGLBPath = "https://raw.githubusercontent.com/erdemkaraoglu/my-3d-models/main/" + modelName + ".glb";
 
-    // GLB Yükleyici (Hatalar giderildi)
-    BABYLON.SceneLoader.Append(
-        "",
-        finalGLBPath,
-        scene,
-        function (loadedScene) {
-            console.log("GLB Başarıyla Yüklendi: " + modelName);
-        },
-        null,
-        function (scene, message) {
-            console.error("GLB HATA:", message);
-        }
-    );
-
-    engine.runRenderLoop(() => {
-        scene.render();
+    // GLB Model Yükleyici
+    BABYLON.SceneLoader.Append("", finalGLBPath, scene, function (loadedScene) {
+        console.log("Model başarıyla merkezi sisteme yüklendi: " + modelName);
+    }, null, function (scene, message) {
+        console.error("GLB Yükleme Hatası:", message);
     });
 
-    window.addEventListener("resize", () => {
-        engine.resize();
-    });
+    engine.runRenderLoop(() => { scene.render(); });
+    window.addEventListener("resize", () => { engine.resize(); });
 </script>
 
 </body>
