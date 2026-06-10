@@ -2,18 +2,20 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Babylon GLB Test</title>
+    <title>Babylon Dinamik GLB Oynatıcı</title>
     <style>
         html, body {
             width: 100%;
             height: 100%;
             margin: 0;
             overflow: hidden;
+            background: transparent !important;
         }
         canvas {
             width: 100%;
             height: 100%;
             display: block;
+            background: transparent !important;
         }
     </style>
 </head>
@@ -26,24 +28,24 @@
 
 <script>
     const canvas = document.getElementById("renderCanvas");
-
     const engine = new BABYLON.Engine(canvas, true);
     const scene = new BABYLON.Scene(engine);
+    
+    // Arka planı tamamen şeffaf yapıyoruz ki Wix'teki mor rengin görünsün
+    scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
 
-    // 🎯 TEK KAMERA (ÇAKIŞMA YOK)
+    // 🎯 TEK KAMERA
     const camera = new BABYLON.ArcRotateCamera(
         "camera",
         -Math.PI / 2,   // yatay
         0,              // TAM ÜSTTEN BAKIŞ
-        5,             // uzaklık
+        5,              // uzaklık
         BABYLON.Vector3.Zero(),
         scene
     );
 
-    // 🚫 MOUSE TAM KAPALI
+    // 🚫 KONTROLLER KAPALI
     camera.detachControl();
-
-    // ekstra güvenlik
     camera.inputs.clear();
 
     const light = new BABYLON.HemisphericLight(
@@ -52,14 +54,23 @@
         scene
     );
 
+    // 🌐 SİHİRLİ KISIM: URL'den hangi GLB'nin isteneceğini okuyan fonksiyon
+    function getGLBFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        // Eğer linkin sonuna kutu adı yazılmadıysa varsayılan olarak senin ek_2026-1.glb dosyanı açar
+        return urlParams.get('model') || "ek_2026-1"; 
+    }
+
+    const modelName = getGLBFromURL();
+    const finalGLBPath = "https://raw.githubusercontent.com/erdemkaraoglu/my-3d-models/main/" + modelName + ".glb";
+
+    // GLB Yükleyici (Hatalar giderildi)
     BABYLON.SceneLoader.Append(
-    "",
-    "https://raw.githubusercontent.com/erdemkaraoglu/my-3d-models/main/ek_2026-1.glb",
-    scene
-    );
+        "",
+        finalGLBPath,
         scene,
-        function () {
-            console.log("GLB yüklendi");
+        function (loadedScene) {
+            console.log("GLB Başarıyla Yüklendi: " + modelName);
         },
         null,
         function (scene, message) {
